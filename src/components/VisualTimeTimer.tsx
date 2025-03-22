@@ -100,37 +100,11 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
           // Only show the number of squares we need
           if (idx >= totalSquares) return null;
           
-          // Calculate if the square should be active
-          const isActive = idx < activeSquares;
-          
-          // Calculate progress within the current active square
-          const isCurrentActive = idx === activeSquares - 1;
-          const squareProgress = isCurrentActive
-            ? (timeRemaining % interval) / interval
-            : 1;
-          
           return (
             <div 
               key={idx}
-              className={cn(
-                "relative rounded-sm border transition-colors duration-300 ease-in-out overflow-hidden",
-                isActive 
-                  ? "border-white/40" 
-                  : "border-white/10"
-              )}
-            >
-              {isActive && (
-                <div 
-                  className="absolute inset-0 bg-white/60 mix-blend-difference transition-transform duration-1000 ease-linear"
-                  style={{ 
-                    transform: isCurrentActive 
-                      ? `scaleY(${squareProgress})`
-                      : 'scaleY(1)',
-                    transformOrigin: 'bottom'
-                  }}
-                />
-              )}
-            </div>
+              className="relative rounded-sm bg-gray-400 border border-black"
+            />
           );
         })}
       </div>
