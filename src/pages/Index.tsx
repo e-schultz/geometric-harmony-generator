@@ -4,12 +4,14 @@ import Visualizer from '@/components/Visualizer';
 import Controls from '@/components/Controls';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import VisualTimeTimer from '@/components/VisualTimeTimer';
 import { DEFAULT_CONFIG } from '@/lib/constants';
 import { VisualizationConfig } from '@/lib/types';
 import { toast } from 'sonner';
 
 const Index: React.FC = () => {
   const [config, setConfig] = useState<VisualizationConfig>(DEFAULT_CONFIG);
+  const [showTimer, setShowTimer] = useState(false);
   
   const handleConfigChange = (newConfig: Partial<VisualizationConfig>) => {
     setConfig(prev => ({ ...prev, ...newConfig }));
@@ -33,6 +35,15 @@ const Index: React.FC = () => {
     });
   };
   
+  const toggleTimer = () => {
+    setShowTimer(prev => !prev);
+    toast(showTimer ? 'Timer hidden' : 'Timer displayed', {
+      position: 'top-center',
+      duration: 2000,
+      className: 'bg-black/70 backdrop-blur-md border border-white/10',
+    });
+  };
+  
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
       {/* Canvas for visualization */}
@@ -41,9 +52,24 @@ const Index: React.FC = () => {
       {/* UI Overlay */}
       <div className="absolute inset-0 flex flex-col pointer-events-none">
         <Header />
-        <div className="flex-1" />
+        <div className="flex-1 flex items-center justify-center">
+          {showTimer && (
+            <div className="pointer-events-auto max-w-md w-full animate-fade-in">
+              <VisualTimeTimer timeDuration={25} interval={15} />
+            </div>
+          )}
+        </div>
         <Footer />
       </div>
+      
+      {/* Timer Toggle Button */}
+      <button
+        onClick={toggleTimer}
+        className="fixed top-8 right-8 bg-black/30 backdrop-blur-md border border-white/10 shadow-md 
+                  rounded-full px-4 py-2 text-white opacity-50 hover:opacity-100 transition-opacity duration-300 z-50"
+      >
+        {showTimer ? 'Hide Timer' : 'Show Timer'}
+      </button>
       
       {/* Controls */}
       <Controls config={config} onChange={handleConfigChange} onReset={handleReset} />
