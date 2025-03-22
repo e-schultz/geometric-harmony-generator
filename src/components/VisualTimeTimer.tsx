@@ -63,16 +63,16 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
   const completionPercentage = ((timeDuration * 60 - timeRemaining) / (timeDuration * 60)) * 100;
   
   return (
-    <div className={cn("flex flex-col items-center p-4 space-y-4 bg-black/20 backdrop-blur-sm rounded-lg border border-white/10", className)}>
+    <div className={cn("flex flex-col items-center p-4 space-y-4 bg-black/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg", className)}>
       {/* Timer Display */}
-      <div className="text-3xl font-mono text-white">
+      <div className="text-4xl font-mono text-white/90 tracking-wider">
         {formatTime(timeRemaining)}
       </div>
       
       {/* Progress Bar */}
-      <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+      <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
         <div 
-          className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000 ease-linear"
+          className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-1000 ease-linear"
           style={{ width: `${completionPercentage}%` }}
         />
       </div>
@@ -100,15 +100,15 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
             <div 
               key={idx}
               className={cn(
-                "relative rounded-md transition-colors duration-300 ease-in-out aspect-square",
+                "relative rounded-md transition-colors duration-300 ease-in-out aspect-square overflow-hidden",
                 isActive 
-                  ? "bg-gradient-to-br from-blue-500 to-purple-500" 
-                  : "bg-white/10"
+                  ? "bg-gradient-to-br from-purple-500/80 to-blue-500/80 backdrop-blur-sm shadow-md" 
+                  : "bg-white/5 border border-white/5"
               )}
             >
               {isCurrentActive && (
                 <div 
-                  className="absolute bottom-0 left-0 right-0 bg-black/20 transition-all duration-1000 ease-linear"
+                  className="absolute bottom-0 left-0 right-0 bg-black/30 backdrop-blur-sm transition-all duration-1000 ease-linear"
                   style={{ height: `${(1 - squareProgress) * 100}%` }}
                 />
               )}
@@ -121,13 +121,13 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
       <div className="flex space-x-4">
         <button
           onClick={toggleTimer}
-          className="px-4 py-1 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+          className="px-4 py-1 bg-white/10 hover:bg-white/20 rounded-full text-white/90 transition-colors border border-white/10 backdrop-blur-sm text-sm"
         >
           {isRunning ? 'Pause' : 'Start'}
         </button>
         <button
           onClick={resetTimer}
-          className="px-4 py-1 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+          className="px-4 py-1 bg-white/10 hover:bg-white/20 rounded-full text-white/90 transition-colors border border-white/10 backdrop-blur-sm text-sm"
         >
           Reset
         </button>
