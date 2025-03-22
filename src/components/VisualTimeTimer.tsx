@@ -86,9 +86,6 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
-  // Calculate completion percentage
-  const completionPercentage = ((timeDuration * 60 - timeRemaining) / (timeDuration * 60)) * 100;
-  
   return (
     <div className={cn("fixed inset-0 flex flex-col items-center justify-center pointer-events-none z-10", className)}>
       {/* Full viewport grid overlay */}
@@ -116,7 +113,7 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
             <div 
               key={idx}
               className={cn(
-                "relative rounded-sm transition-colors duration-300 ease-in-out overflow-hidden mix-blend-difference",
+                "relative rounded-sm transition-colors duration-300 ease-in-out overflow-hidden",
                 isActive 
                   ? "border border-white/40" 
                   : "border border-white/10"
@@ -124,7 +121,7 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
             >
               {isActive && (
                 <div 
-                  className="absolute inset-0 bg-white backdrop-invert transition-transform duration-1000 ease-linear"
+                  className="absolute inset-0 bg-white backdrop-invert mix-blend-difference transition-transform duration-1000 ease-linear"
                   style={{ 
                     transform: isCurrentActive 
                       ? `scaleY(${squareProgress})`
