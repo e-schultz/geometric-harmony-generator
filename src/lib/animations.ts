@@ -100,10 +100,10 @@ export const generateGridLines = (
   const lines: Line[] = [];
   const spacing = 50;
   const size = spacing * lineCount / 2;
+  const t = rotation * time / 1000;
   
   // Create horizontal and vertical lines
   for (let i = -lineCount / 2; i <= lineCount / 2; i++) {
-    const t = rotation * time / 1000;
     const opacity = 0.3 + Math.abs(i) / (lineCount / 2) * 0.7;
     
     // Horizontal lines

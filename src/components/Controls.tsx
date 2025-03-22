@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ControlsProps } from '@/lib/types';
 import { VISUALIZATION_TYPES, MAX_LINE_COUNT, MIN_LINE_COUNT, MAX_SPEED, MIN_SPEED, MAX_ROTATION, MIN_ROTATION, MAX_PERSPECTIVE, MIN_PERSPECTIVE, MAX_LINE_OPACITY, MIN_LINE_OPACITY } from '@/lib/constants';
@@ -9,7 +8,7 @@ import {
   Play, 
   RefreshCw, 
   Grid, 
-  Cube, 
+  Box, 
   LayoutDashboard,
   SlidersHorizontal,
   Eye,
@@ -46,7 +45,7 @@ const Controls: React.FC<ControlsProps> = ({ config, onChange, onReset }) => {
         icon = <Grid className="w-4 h-4" />;
         break;
       case 'polyhedron':
-        icon = <Cube className="w-4 h-4" />;
+        icon = <Box className="w-4 h-4" />;
         break;
       default:
         icon = <LayoutDashboard className="w-4 h-4" />;
@@ -67,7 +66,6 @@ const Controls: React.FC<ControlsProps> = ({ config, onChange, onReset }) => {
   
   return (
     <>
-      {/* Floating button to toggle controls */}
       <Button
         variant="secondary"
         size="icon"
@@ -77,7 +75,6 @@ const Controls: React.FC<ControlsProps> = ({ config, onChange, onReset }) => {
         {showControls ? <X className="w-5 h-5" /> : <SlidersHorizontal className="w-5 h-5" />}
       </Button>
       
-      {/* Main control panel */}
       <div className={`control-panel ${showControls ? 'active' : ''} z-40`}>
         <div className="flex gap-2">
           {VISUALIZATION_TYPES.map(type => renderVisualizationButton(type))}
@@ -106,7 +103,6 @@ const Controls: React.FC<ControlsProps> = ({ config, onChange, onReset }) => {
         </Button>
       </div>
       
-      {/* Expanded controls panel */}
       {showControls && (
         <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-md rounded-lg p-4 flex flex-col gap-4 w-80 animate-fade-in border border-white/10 shadow-lg z-40">
           <p className="text-sm text-center font-medium flex items-center justify-center gap-2">
