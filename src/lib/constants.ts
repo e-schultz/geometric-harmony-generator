@@ -1,7 +1,6 @@
-
 import { VisualizationConfig, VisualizationType } from './types';
 
-export const VISUALIZATION_TYPES: VisualizationType[] = ['tunnel', 'grid', 'polyhedron'];
+export const VISUALIZATION_TYPES: VisualizationType[] = ['tunnel', 'grid', 'polyhedron', 'particles'];
 
 export const DEFAULT_CONFIG: VisualizationConfig = {
   type: 'tunnel',
