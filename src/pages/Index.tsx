@@ -49,16 +49,13 @@ const Index: React.FC = () => {
       {/* Canvas for visualization */}
       <Visualizer config={config} />
       
+      {/* Timer Overlay (conditionally rendered) */}
+      {showTimer && <VisualTimeTimer timeDuration={25} interval={15} />}
+      
       {/* UI Overlay */}
       <div className="absolute inset-0 flex flex-col pointer-events-none">
         <Header />
-        <div className="flex-1 flex items-center justify-center">
-          {showTimer && (
-            <div className="pointer-events-auto max-w-md w-full animate-fade-in">
-              <VisualTimeTimer timeDuration={25} interval={15} />
-            </div>
-          )}
-        </div>
+        <div className="flex-1" />
         <Footer />
       </div>
       

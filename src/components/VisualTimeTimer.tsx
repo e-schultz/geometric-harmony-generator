@@ -22,9 +22,36 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
   // Calculate the number of active squares
   const activeSquares = Math.ceil(timeRemaining / interval);
   
-  // Calculate grid dimensions to make it as square as possible
-  const cols = Math.ceil(Math.sqrt(totalSquares));
-  const rows = Math.ceil(totalSquares / cols);
+  // Calculate grid dimensions based on viewport aspect ratio
+  const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const [gridDimensions, setGridDimensions] = useState({ cols: 1, rows: 1 });
+  
+  // Update dimensions on window resize
+  useEffect(() => {
+    const updateDimensions = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      setDimensions({ width, height });
+      
+      // Calculate grid dimensions based on aspect ratio and total squares
+      const aspectRatio = width / height;
+      let cols = Math.ceil(Math.sqrt(totalSquares * aspectRatio));
+      let rows = Math.ceil(totalSquares / cols);
+      
+      // Adjust if we have too few in either dimension
+      if (cols < 3) cols = 3;
+      if (rows < 3) rows = 3;
+      
+      setGridDimensions({ cols, rows });
+    };
+    
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, [totalSquares]);
   
   // Start/pause the timer
   const toggleTimer = () => {
@@ -63,30 +90,19 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
   const completionPercentage = ((timeDuration * 60 - timeRemaining) / (timeDuration * 60)) * 100;
   
   return (
-    <div className={cn("flex flex-col items-center p-4 space-y-4 bg-black/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg", className)}>
-      {/* Timer Display */}
-      <div className="text-4xl font-mono text-white/90 tracking-wider">
-        {formatTime(timeRemaining)}
-      </div>
-      
-      {/* Progress Bar */}
-      <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-1000 ease-linear"
-          style={{ width: `${completionPercentage}%` }}
-        />
-      </div>
-      
-      {/* Grid of Squares */}
+    <div className={cn("fixed inset-0 flex flex-col items-center justify-center pointer-events-none z-10", className)}>
+      {/* Full viewport grid overlay */}
       <div 
-        className="grid gap-1 w-full"
+        className="absolute inset-0 grid gap-1"
         style={{ 
-          gridTemplateColumns: `repeat(${cols}, 1fr)`,
-          gridTemplateRows: `repeat(${rows}, 1fr)`,
-          aspectRatio: `${cols}/${rows}`
+          gridTemplateColumns: `repeat(${gridDimensions.cols}, 1fr)`,
+          gridTemplateRows: `repeat(${gridDimensions.rows}, 1fr)`
         }}
       >
-        {Array.from({ length: totalSquares }).map((_, idx) => {
+        {Array.from({ length: gridDimensions.cols * gridDimensions.rows }).map((_, idx) => {
+          // Only show the number of squares we need
+          if (idx >= totalSquares) return null;
+          
           // Calculate if the square should be active
           const isActive = idx < activeSquares;
           
@@ -100,16 +116,21 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
             <div 
               key={idx}
               className={cn(
-                "relative rounded-md transition-colors duration-300 ease-in-out aspect-square overflow-hidden",
+                "relative rounded-sm transition-colors duration-300 ease-in-out overflow-hidden mix-blend-difference",
                 isActive 
-                  ? "bg-gradient-to-br from-purple-500/80 to-blue-500/80 backdrop-blur-sm shadow-md" 
-                  : "bg-white/5 border border-white/5"
+                  ? "border border-white/40" 
+                  : "border border-white/10"
               )}
             >
-              {isCurrentActive && (
+              {isActive && (
                 <div 
-                  className="absolute bottom-0 left-0 right-0 bg-black/30 backdrop-blur-sm transition-all duration-1000 ease-linear"
-                  style={{ height: `${(1 - squareProgress) * 100}%` }}
+                  className="absolute inset-0 bg-white backdrop-invert transition-transform duration-1000 ease-linear"
+                  style={{ 
+                    transform: isCurrentActive 
+                      ? `scaleY(${squareProgress})`
+                      : 'scaleY(1)',
+                    transformOrigin: 'bottom'
+                  }}
                 />
               )}
             </div>
@@ -117,20 +138,28 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
         })}
       </div>
       
-      {/* Controls */}
-      <div className="flex space-x-4">
-        <button
-          onClick={toggleTimer}
-          className="px-4 py-1 bg-white/10 hover:bg-white/20 rounded-full text-white/90 transition-colors border border-white/10 backdrop-blur-sm text-sm"
-        >
-          {isRunning ? 'Pause' : 'Start'}
-        </button>
-        <button
-          onClick={resetTimer}
-          className="px-4 py-1 bg-white/10 hover:bg-white/20 rounded-full text-white/90 transition-colors border border-white/10 backdrop-blur-sm text-sm"
-        >
-          Reset
-        </button>
+      {/* Overlay UI */}
+      <div className="fixed bottom-8 flex flex-col items-center gap-6 pointer-events-auto">
+        {/* Timer Display */}
+        <div className="text-5xl font-mono text-white/90 tracking-wider backdrop-blur-sm bg-black/10 px-6 py-3 rounded-full border border-white/10 shadow-xl">
+          {formatTime(timeRemaining)}
+        </div>
+        
+        {/* Controls */}
+        <div className="flex space-x-4">
+          <button
+            onClick={toggleTimer}
+            className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white/90 transition-colors border border-white/10 backdrop-blur-sm text-sm shadow-md"
+          >
+            {isRunning ? 'Pause' : 'Start'}
+          </button>
+          <button
+            onClick={resetTimer}
+            className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white/90 transition-colors border border-white/10 backdrop-blur-sm text-sm shadow-md"
+          >
+            Reset
+          </button>
+        </div>
       </div>
     </div>
   );
