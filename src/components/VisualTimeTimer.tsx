@@ -113,15 +113,15 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
             <div 
               key={idx}
               className={cn(
-                "relative rounded-sm transition-colors duration-300 ease-in-out overflow-hidden",
+                "relative rounded-sm border transition-colors duration-300 ease-in-out overflow-hidden",
                 isActive 
-                  ? "border border-white/40" 
-                  : "border border-white/10"
+                  ? "border-white/40" 
+                  : "border-white/10"
               )}
             >
               {isActive && (
                 <div 
-                  className="absolute inset-0 bg-white backdrop-invert mix-blend-difference transition-transform duration-1000 ease-linear"
+                  className="absolute inset-0 bg-white/60 mix-blend-difference transition-transform duration-1000 ease-linear"
                   style={{ 
                     transform: isCurrentActive 
                       ? `scaleY(${squareProgress})`
