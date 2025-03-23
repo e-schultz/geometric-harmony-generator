@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
@@ -68,7 +67,7 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
 
   return (
     <div className={cn(
-      "flex flex-col p-6 rounded-lg bg-black/80 backdrop-blur-lg border border-white/10 shadow-xl w-full max-w-md mx-auto",
+      "flex flex-col p-6 rounded-lg bg-black/80 backdrop-blur-lg border border-white/10 shadow-xl w-full",
       className
     )}>
       <div className="flex items-center justify-between mb-6">

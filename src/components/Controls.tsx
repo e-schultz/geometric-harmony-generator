@@ -33,7 +33,7 @@ const Controls: React.FC = () => {
       <Button
         variant="secondary"
         size="icon"
-        className="fixed bottom-8 right-8 w-10 h-10 bg-black/30 backdrop-blur-md border border-white/10 shadow-md opacity-50 hover:opacity-100 transition-opacity duration-300 z-50"
+        className="fixed bottom-8 left-8 w-10 h-10 bg-black/30 backdrop-blur-md border border-white/10 shadow-md opacity-50 hover:opacity-100 transition-opacity duration-300 z-50"
         onClick={() => setShowControls(!showControls)}
       >
         {showControls ? <X className="w-5 h-5" /> : <SlidersHorizontal className="w-5 h-5" />}
