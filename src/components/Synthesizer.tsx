@@ -8,7 +8,8 @@ import {
   Volume2, 
   Clock, 
   Waves,
-  Music
+  Music,
+  Filter
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSynthesizer } from '@/hooks/useSynthesizer';
@@ -19,6 +20,8 @@ interface SynthesizerProps {
   decay?: number;
   sustain?: number;
   release?: number;
+  filterCutoff?: number;
+  filterResonance?: number;
   className?: string;
 }
 
@@ -28,6 +31,8 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
   decay = 0.1,
   sustain = 0.3,
   release = 0.1,
+  filterCutoff = 1000,
+  filterResonance = 1,
   className,
 }) => {
   const {
@@ -47,12 +52,18 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
     togglePatternStep,
     isPlaying,
     toggleSequencer,
+    filterCutoff: cutoff,
+    setFilterCutoff,
+    filterResonance: resonance,
+    setFilterResonance,
   } = useSynthesizer({
     frequency,
     attack,
     decay,
     sustain,
     release,
+    filterCutoff,
+    filterResonance,
   });
 
   return (
@@ -115,6 +126,35 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
             max={120}
             step={1}
             onValueChange={([value]) => setFrequency(value)}
+          />
+        </div>
+
+        {/* Filter Controls */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs">
+            <span className="flex items-center gap-1"><Filter className="w-3 h-3" /> Filter Cutoff</span>
+            <span>{cutoff} Hz</span>
+          </div>
+          <Slider
+            value={[cutoff]}
+            min={50}
+            max={5000}
+            step={10}
+            onValueChange={([value]) => setFilterCutoff(value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs">
+            <span className="flex items-center gap-1"><Filter className="w-3 h-3" /> Resonance</span>
+            <span>{resonance.toFixed(1)}</span>
+          </div>
+          <Slider
+            value={[resonance]}
+            min={0.1}
+            max={10}
+            step={0.1}
+            onValueChange={([value]) => setFilterResonance(value)}
           />
         </div>
 

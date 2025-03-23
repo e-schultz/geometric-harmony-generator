@@ -10,6 +10,8 @@ export interface SynthesizerParams {
   isPlaying: boolean;
   bpm: number;
   pattern: number[];
+  filterCutoff: number; // Added filter cutoff parameter
+  filterResonance: number; // Added filter resonance parameter
 }
 
 export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) => {
@@ -23,6 +25,8 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
     isPlaying: false,
     bpm: 120,      // Beats per minute
     pattern: [1, 0, 0, 1, 0, 1, 0, 0], // Default pattern (1 = note, 0 = rest)
+    filterCutoff: 1000, // Default cutoff frequency in Hz
+    filterResonance: 1, // Default resonance (Q) value
   };
 
   // Merge defaults with provided params
@@ -37,11 +41,13 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
   const [isPlaying, setIsPlaying] = useState(params.isPlaying);
   const [bpm, setBpmState] = useState(params.bpm);
   const [pattern, setPattern] = useState(params.pattern);
+  const [filterCutoff, setFilterCutoffState] = useState(params.filterCutoff);
+  const [filterResonance, setFilterResonanceState] = useState(params.filterResonance);
 
   // Refs for Web Audio API
   const audioContextRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
-  const activeOscillators = useRef<Map<number, { osc: OscillatorNode, gain: GainNode }>>(new Map());
+  const activeOscillators = useRef<Map<number, { osc: OscillatorNode, gain: GainNode, filter: BiquadFilterNode }>>(new Map());
   const intervalRef = useRef<number | null>(null);
   const stepRef = useRef<number>(0);
   
@@ -53,6 +59,8 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
   const releaseRef = useRef(release);
   const bpmRef = useRef(bpm);
   const isPlayingRef = useRef(isPlaying);
+  const filterCutoffRef = useRef(filterCutoff);
+  const filterResonanceRef = useRef(filterResonance);
   
   // Throttling mechanism
   const lastUpdateTimeRef = useRef(Date.now());
@@ -112,6 +120,37 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
     }
   }, [throttleUpdate]);
 
+  // Filter parameter setters
+  const setFilterCutoff = useCallback((value: number) => {
+    throttleUpdate(value, filterCutoffRef, setFilterCutoffState);
+    
+    // Update cutoff frequency for all active oscillators in real-time
+    activeOscillators.current.forEach(node => {
+      try {
+        if (node.filter) {
+          node.filter.frequency.setValueAtTime(value, audioContextRef.current?.currentTime || 0);
+        }
+      } catch (error) {
+        console.error("Error updating filter cutoff:", error);
+      }
+    });
+  }, [throttleUpdate]);
+  
+  const setFilterResonance = useCallback((value: number) => {
+    throttleUpdate(value, filterResonanceRef, setFilterResonanceState);
+    
+    // Update resonance for all active oscillators in real-time
+    activeOscillators.current.forEach(node => {
+      try {
+        if (node.filter) {
+          node.filter.Q.setValueAtTime(value, audioContextRef.current?.currentTime || 0);
+        }
+      } catch (error) {
+        console.error("Error updating filter resonance:", error);
+      }
+    });
+  }, [throttleUpdate]);
+
   // Initialize audio context
   useEffect(() => {
     if (!audioContextRef.current) {
@@ -143,6 +182,7 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
         node.osc.stop();
         node.osc.disconnect();
         node.gain.disconnect();
+        node.filter.disconnect();
       } catch (error) {
         console.error("Error cleaning up audio node:", error);
       }
@@ -150,7 +190,7 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
     activeOscillators.current.clear();
   }, []);
 
-  // Create a note with ADSR envelope
+  // Create a note with ADSR envelope and filter
   const createNote = useCallback((time: number, freq: number) => {
     if (!audioContextRef.current || !gainNodeRef.current) return;
 
@@ -158,14 +198,21 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
       const ctx = audioContextRef.current;
       const osc = ctx.createOscillator();
       const noteGain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
       const noteId = Date.now();
 
       // Set oscillator type and frequency
       osc.type = 'square';
       osc.frequency.setValueAtTime(freq, time);
 
-      // Connect oscillator to its own gain node, then to master gain
-      osc.connect(noteGain);
+      // Configure filter
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(filterCutoffRef.current, time);
+      filter.Q.setValueAtTime(filterResonanceRef.current, time);
+
+      // Connect the signal path: oscillator -> filter -> note gain -> master gain
+      osc.connect(filter);
+      filter.connect(noteGain);
       noteGain.connect(gainNodeRef.current);
 
       // Create ADSR envelope - use ref values for most up-to-date parameters
@@ -181,7 +228,7 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
       noteGain.gain.linearRampToValueAtTime(0, time + a + d + r);
 
       // Store the oscillator and its gain node for cleanup
-      activeOscillators.current.set(noteId, { osc, gain: noteGain });
+      activeOscillators.current.set(noteId, { osc, gain: noteGain, filter });
 
       // Start and stop the oscillator
       osc.start(time);
@@ -295,6 +342,8 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
   useEffect(() => { releaseRef.current = release; }, [release]);
   useEffect(() => { bpmRef.current = bpm; }, [bpm]);
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  useEffect(() => { filterCutoffRef.current = filterCutoff; }, [filterCutoff]);
+  useEffect(() => { filterResonanceRef.current = filterResonance; }, [filterResonance]);
 
   return {
     frequency,
@@ -316,5 +365,9 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
     startSequencer,
     stopSequencer,
     toggleSequencer,
+    filterCutoff,
+    setFilterCutoff,
+    filterResonance,
+    setFilterResonance,
   };
 };
