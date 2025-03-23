@@ -21,6 +21,11 @@ export const useTimer = ({ duration, speedMultiplier = 1 }: UseTimerProps) => {
     setTimeRemaining(duration * 60);
   };
   
+  // Update time when duration changes
+  useEffect(() => {
+    setTimeRemaining(duration * 60);
+  }, [duration]);
+  
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

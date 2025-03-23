@@ -28,7 +28,7 @@ const IndexContent: React.FC = () => {
       {/* Timer Overlay (conditionally rendered) */}
       {showTimer && (
         <VisualTimeTimer 
-          timeDuration={25} 
+          initialDuration={25} 
           interval={15}
         />
       )}
