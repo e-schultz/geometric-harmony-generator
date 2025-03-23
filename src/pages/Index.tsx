@@ -7,7 +7,7 @@ import Footer from '@/components/Footer';
 import VisualTimeTimer from '@/components/VisualTimeTimer';
 import Synthesizer from '@/components/Synthesizer';
 import { VisualizationProvider, useVisualization } from '@/contexts/VisualizationContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SynthesizerProvider } from '@/contexts/SynthesizerContext';
 import {
   Sheet,
   SheetContent,
@@ -81,7 +81,9 @@ const IndexContent: React.FC = () => {
 const Index: React.FC = () => {
   return (
     <VisualizationProvider>
-      <IndexContent />
+      <SynthesizerProvider>
+        <IndexContent />
+      </SynthesizerProvider>
     </VisualizationProvider>
   );
 };

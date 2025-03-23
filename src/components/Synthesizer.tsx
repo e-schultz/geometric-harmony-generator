@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
@@ -11,39 +12,25 @@ import {
   Filter
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSynthesizer } from '@/hooks/useSynthesizer';
+import { useSynthesizerContext } from '@/contexts/SynthesizerContext';
 
 interface SynthesizerProps {
-  frequency?: number;
-  attack?: number;
-  decay?: number;
-  sustain?: number;
-  release?: number;
-  filterCutoff?: number;
-  filterResonance?: number;
   className?: string;
 }
 
 const Synthesizer: React.FC<SynthesizerProps> = ({
-  frequency = 60,
-  attack = 0.01,
-  decay = 0.1,
-  sustain = 0.3,
-  release = 0.1,
-  filterCutoff = 1000,
-  filterResonance = 1,
   className,
 }) => {
   const {
-    frequency: freq,
+    frequency,
     setFrequency,
-    attack: att,
+    attack,
     setAttack,
-    decay: dec,
+    decay,
     setDecay,
-    sustain: sus,
+    sustain,
     setSustain,
-    release: rel,
+    release,
     setRelease,
     bpm,
     setBpm,
@@ -51,19 +38,11 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
     togglePatternStep,
     isPlaying,
     toggleSequencer,
-    filterCutoff: cutoff,
-    setFilterCutoff,
-    filterResonance: resonance,
-    setFilterResonance,
-  } = useSynthesizer({
-    frequency,
-    attack,
-    decay,
-    sustain,
-    release,
     filterCutoff,
+    setFilterCutoff,
     filterResonance,
-  });
+    setFilterResonance,
+  } = useSynthesizerContext();
 
   return (
     <div className={cn(
@@ -117,10 +96,10 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
             <span className="flex items-center gap-1"><Waves className="w-3 h-3" /> Frequency</span>
-            <span>{freq} Hz</span>
+            <span>{frequency} Hz</span>
           </div>
           <Slider
-            value={[freq]}
+            value={[frequency]}
             min={30}
             max={120}
             step={1}
@@ -132,10 +111,10 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
             <span className="flex items-center gap-1"><Filter className="w-3 h-3" /> Filter Cutoff</span>
-            <span>{cutoff} Hz</span>
+            <span>{filterCutoff} Hz</span>
           </div>
           <Slider
-            value={[cutoff]}
+            value={[filterCutoff]}
             min={50}
             max={5000}
             step={10}
@@ -146,10 +125,10 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
             <span className="flex items-center gap-1"><Filter className="w-3 h-3" /> Resonance</span>
-            <span>{resonance.toFixed(1)}</span>
+            <span>{filterResonance.toFixed(1)}</span>
           </div>
           <Slider
-            value={[resonance]}
+            value={[filterResonance]}
             min={0.1}
             max={10}
             step={0.1}
@@ -160,10 +139,10 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
             <span className="flex items-center gap-1"><Volume2 className="w-3 h-3" /> Attack</span>
-            <span>{att.toFixed(2)}s</span>
+            <span>{attack.toFixed(2)}s</span>
           </div>
           <Slider
-            value={[att]}
+            value={[attack]}
             min={0.01}
             max={0.5}
             step={0.01}
@@ -174,10 +153,10 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
             <span>Decay</span>
-            <span>{dec.toFixed(2)}s</span>
+            <span>{decay.toFixed(2)}s</span>
           </div>
           <Slider
-            value={[dec]}
+            value={[decay]}
             min={0.01}
             max={1}
             step={0.01}
@@ -188,10 +167,10 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
             <span>Sustain</span>
-            <span>{sus.toFixed(2)}</span>
+            <span>{sustain.toFixed(2)}</span>
           </div>
           <Slider
-            value={[sus]}
+            value={[sustain]}
             min={0}
             max={1}
             step={0.01}
@@ -202,10 +181,10 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
             <span>Release</span>
-            <span>{rel.toFixed(2)}s</span>
+            <span>{release.toFixed(2)}s</span>
           </div>
           <Slider
-            value={[rel]}
+            value={[release]}
             min={0.01}
             max={1}
             step={0.01}
