@@ -111,7 +111,7 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
               key={idx}
               className={cn(
                 "relative rounded-sm border border-white/60",
-                isFilled ? "bg-white/30" : "bg-transparent"
+                isFilled ? "bg-white/60" : "bg-transparent"
               )}
             />
           );
