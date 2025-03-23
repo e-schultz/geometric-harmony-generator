@@ -127,9 +127,9 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
               key={idx}
               className="relative rounded-sm border border-white/60 overflow-hidden"
             >
-              {/* Filled area - uses a dynamic height based on fill percentage */}
+              {/* Filled area - uses a dynamic height based on fill percentage with increased transparency */}
               <div 
-                className="absolute bottom-0 left-0 right-0 bg-white/60 transition-all duration-300 ease-linear"
+                className="absolute bottom-0 left-0 right-0 bg-white/40 transition-all duration-300 ease-linear"
                 style={{ height: `${fillPercentage}%` }}
               />
             </div>
