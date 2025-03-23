@@ -114,14 +114,18 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
       
       // Play note if pattern has a 1 at current step
       if (pattern[step] === 1) {
+        // Always use the current parameter values when creating a note
         createNote(currentTime, frequency);
       }
       
       // Advance to next step
       stepRef.current++;
       
+      // Calculate new step time based on current BPM
+      const currentStepTime = 60 / bpm / 2;
+      
       // Schedule next loop
-      intervalRef.current = window.setTimeout(loop, stepTime * 1000);
+      intervalRef.current = window.setTimeout(loop, currentStepTime * 1000);
     };
     
     // Start the loop
@@ -160,6 +164,15 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
     newPattern[index] = newPattern[index] === 1 ? 0 : 1;
     setPattern(newPattern);
   };
+
+  // Effect to update BPM in real-time
+  useEffect(() => {
+    if (isPlaying && intervalRef.current) {
+      // Reset the sequencer to apply the new BPM
+      stopSequencer();
+      startSequencer();
+    }
+  }, [bpm]);
 
   // Cleanup on unmount
   useEffect(() => {
