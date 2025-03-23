@@ -19,9 +19,6 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
   // Calculate the total number of squares needed
   const totalSquares = Math.ceil(timeDuration * 60 / interval);
   
-  // Calculate the number of active squares
-  const activeSquares = Math.ceil(timeRemaining / interval);
-  
   // Calculate grid dimensions based on viewport aspect ratio
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [gridDimensions, setGridDimensions] = useState({ cols: 1, rows: 1 });
@@ -103,7 +100,7 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
           return (
             <div 
               key={idx}
-              className="relative rounded-sm bg-gray-400 border border-black"
+              className="relative rounded-sm border border-white bg-transparent"
             />
           );
         })}
