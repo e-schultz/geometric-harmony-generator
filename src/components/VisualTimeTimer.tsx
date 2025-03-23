@@ -16,8 +16,8 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
   const [timeRemaining, setTimeRemaining] = useState(timeDuration * 60); // Convert minutes to seconds
   const [isRunning, setIsRunning] = useState(false);
   
-  // Calculate the total number of squares needed
-  const totalSquares = Math.ceil(timeDuration * 60 / interval);
+  // Number of squares is equal to the number of minutes
+  const totalSquares = timeDuration;
   
   // Calculate grid dimensions based on viewport aspect ratio
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -36,8 +36,8 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
       let rows = Math.ceil(totalSquares / cols);
       
       // Adjust if we have too few in either dimension
-      if (cols < 3) cols = 3;
-      if (rows < 3) rows = 3;
+      if (cols < 3 && totalSquares >= 3) cols = 3;
+      if (rows < 3 && totalSquares >= 3) rows = 3;
       
       setGridDimensions({ cols, rows });
     };
@@ -93,10 +93,7 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
           gridTemplateRows: `repeat(${gridDimensions.rows}, 1fr)`
         }}
       >
-        {Array.from({ length: gridDimensions.cols * gridDimensions.rows }).map((_, idx) => {
-          // Only show the number of squares we need
-          if (idx >= totalSquares) return null;
-          
+        {Array.from({ length: totalSquares }).map((_, idx) => {
           return (
             <div 
               key={idx}
