@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { VisualizationConfig } from '@/lib/types';
+import { VisualizationConfig, VisualizationType } from '@/lib/types';
 
 interface VisualTimeTimerProps {
   timeDuration: number; // Total duration in minutes
   interval: number; // Interval in seconds
   className?: string;
+  currentVisualization: VisualizationType; // Current visualization type chosen by user
   onVisualizationChange?: (config: Partial<VisualizationConfig>) => void;
 }
 
@@ -14,6 +14,7 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
   timeDuration,
   interval,
   className,
+  currentVisualization,
   onVisualizationChange
 }) => {
   const [timeRemaining, setTimeRemaining] = useState(timeDuration * 60); // Convert minutes to seconds
@@ -77,6 +78,9 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
     
     // Modulate visualization parameters based on timer progress
     const newConfig: Partial<VisualizationConfig> = {
+      // Use the current visualization type selected by the user
+      type: currentVisualization,
+      
       // Increase rotation speed as timer progresses
       rotation: 0.5 + progress * 1.5,
       
@@ -93,19 +97,8 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
       lineOpacity: 0.8 + progress * 0.2,
     };
     
-    // Switch visualization type at certain thresholds
-    if (progress > 0.75) {
-      newConfig.type = 'particles';
-    } else if (progress > 0.5) {
-      newConfig.type = 'polyhedron';
-    } else if (progress > 0.25) {
-      newConfig.type = 'grid';
-    } else {
-      newConfig.type = 'tunnel';
-    }
-    
     onVisualizationChange(newConfig);
-  }, [timeRemaining, timeDuration, onVisualizationChange]);
+  }, [timeRemaining, timeDuration, onVisualizationChange, currentVisualization]);
   
   // Timer effect - now runs faster based on speedMultiplier
   useEffect(() => {

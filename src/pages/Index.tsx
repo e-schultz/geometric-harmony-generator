@@ -54,6 +54,7 @@ const Index: React.FC = () => {
         <VisualTimeTimer 
           timeDuration={25} 
           interval={15} 
+          currentVisualization={config.type}
           onVisualizationChange={handleConfigChange}
         />
       )}
