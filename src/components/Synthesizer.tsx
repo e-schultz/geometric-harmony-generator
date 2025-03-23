@@ -7,7 +7,7 @@ import {
   Square, 
   Volume2, 
   Clock, 
-  Waveform,
+  Waves,
   Music
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -106,7 +106,7 @@ const Synthesizer: React.FC<SynthesizerProps> = ({
 
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
-            <span className="flex items-center gap-1"><Waveform className="w-3 h-3" /> Frequency</span>
+            <span className="flex items-center gap-1"><Waves className="w-3 h-3" /> Frequency</span>
             <span>{freq} Hz</span>
           </div>
           <Slider
