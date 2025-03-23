@@ -23,6 +23,9 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [gridDimensions, setGridDimensions] = useState({ cols: 1, rows: 1 });
   
+  // Speed multiplier for testing (higher = faster)
+  const speedMultiplier = 5;
+  
   // Update dimensions on window resize
   useEffect(() => {
     const updateDimensions = () => {
@@ -61,20 +64,20 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
     setTimeRemaining(timeDuration * 60);
   };
   
-  // Timer effect
+  // Timer effect - now runs faster based on speedMultiplier
   useEffect(() => {
     let timerId: number | undefined;
     
     if (isRunning && timeRemaining > 0) {
       timerId = window.setInterval(() => {
         setTimeRemaining(prev => Math.max(0, prev - 1));
-      }, 1000);
+      }, 1000 / speedMultiplier); // Run faster by dividing the interval by speedMultiplier
     }
     
     return () => {
       if (timerId) clearInterval(timerId);
     };
-  }, [isRunning, timeRemaining]);
+  }, [isRunning, timeRemaining, speedMultiplier]);
   
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
@@ -139,6 +142,11 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
           >
             Reset
           </button>
+        </div>
+        
+        {/* Speed indicator */}
+        <div className="text-xs text-white/70 backdrop-blur-sm bg-black/10 px-3 py-1 rounded-full">
+          Testing Mode: {speedMultiplier}x Speed
         </div>
       </div>
     </div>
