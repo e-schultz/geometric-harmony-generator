@@ -5,6 +5,7 @@ import { generateTunnelLines } from './tunnel';
 import { generateGridLines } from './grid';
 import { generatePolyhedronLines } from './polyhedron';
 import { generateParticleLines } from './particles';
+import { generateHexGridLines } from './hexGrid';
 
 // Generate lines based on visualization type
 export const generateLines = (
@@ -25,6 +26,8 @@ export const generateLines = (
       return generatePolyhedronLines(lineCount, depth, width, height, rotation, time);
     case 'particles':
       return generateParticleLines(lineCount, depth, width, height, rotation, time);
+    case 'hexGrid':
+      return generateHexGridLines(lineCount, depth, width, height, rotation, time);
     default:
       return generateTunnelLines(lineCount, depth, width, height, rotation, time);
   }

@@ -1,4 +1,5 @@
-export type VisualizationType = 'tunnel' | 'grid' | 'polyhedron' | 'particles';
+
+export type VisualizationType = 'tunnel' | 'grid' | 'polyhedron' | 'particles' | 'hexGrid';
 
 export interface VisualizationConfig {
   type: VisualizationType;

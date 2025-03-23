@@ -2,7 +2,7 @@
 import React from 'react';
 import { VisualizationType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Grid, Box, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Grid, Box, Sparkles, Hexagon } from 'lucide-react';
 
 interface VisualizationButtonsProps {
   currentType: VisualizationType;
@@ -29,6 +29,9 @@ const VisualizationButtons: React.FC<VisualizationButtonsProps> = ({
         break;
       case 'particles':
         icon = <Sparkles className="w-4 h-4" />;
+        break;
+      case 'hexGrid':
+        icon = <Hexagon className="w-4 h-4" />;
         break;
       default:
         icon = <LayoutDashboard className="w-4 h-4" />;
