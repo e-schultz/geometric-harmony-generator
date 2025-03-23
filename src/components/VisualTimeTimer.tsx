@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { VisualizationConfig, VisualizationType } from '@/lib/types';
@@ -68,7 +69,19 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
     setTimeRemaining(timeDuration * 60);
   };
   
-  // Modulate visualization based on timer progress
+  // LFO wave generators - create smooth oscillating values
+  const sineWave = (time: number, frequency: number, amplitude: number, offset: number = 0): number => {
+    return offset + amplitude * Math.sin(time * frequency);
+  };
+  
+  const triangleWave = (time: number, frequency: number, amplitude: number, offset: number = 0): number => {
+    const period = 1 / frequency;
+    const t = (time % period) / period;
+    const value = t < 0.5 ? 2 * t : 2 * (1 - t);
+    return offset + amplitude * value;
+  };
+  
+  // Modulate visualization based on timer progress using LFO patterns
   useEffect(() => {
     if (!onVisualizationChange) return;
     
@@ -76,25 +89,29 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
     const totalSeconds = timeDuration * 60;
     const progress = 1 - (timeRemaining / totalSeconds);
     
-    // Modulate visualization parameters based on timer progress
+    // Current time in seconds (for LFO calculations)
+    const currentTime = (totalSeconds - timeRemaining) / 10;
+    
+    // Use LFO waves with different frequencies to create evolving patterns
+    // Each parameter has its own independent LFO
     const newConfig: Partial<VisualizationConfig> = {
       // Use the current visualization type selected by the user
       type: currentVisualization,
       
-      // Increase rotation speed as timer progresses
-      rotation: 0.5 + progress * 1.5,
+      // Rotation: slow sine wave + increase with progress
+      rotation: sineWave(currentTime, 0.05, 0.5, 0.5 + progress * 0.7),
       
-      // Adjust perspective based on progress (zoom in as time goes by)
-      perspective: 800 - progress * 300,
+      // Perspective: medium triangle wave decreasing with progress
+      perspective: triangleWave(currentTime, 0.03, 150, 800 - progress * 150),
       
-      // Increase line count as we get closer to the end
-      lineCount: Math.floor(15 + progress * 10),
+      // Line count: slow triangle wave + slight increase with progress
+      lineCount: Math.floor(triangleWave(currentTime, 0.02, 5, 15 + progress * 3)),
       
-      // Pulse effect gets faster towards the end
+      // Always have pulse effect on
       pulseEffect: true,
       
-      // Line opacity increases for more intensity
-      lineOpacity: 0.8 + progress * 0.2,
+      // Line opacity: very slow sine wave with slight increase over time
+      lineOpacity: sineWave(currentTime, 0.01, 0.1, 0.8 + progress * 0.1),
     };
     
     onVisualizationChange(newConfig);
