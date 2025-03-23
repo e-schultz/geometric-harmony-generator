@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { VisualizationConfig } from '@/lib/types';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Eye } from 'lucide-react';
+import { useVisualization } from '@/contexts/VisualizationContext';
 import { 
   MAX_LINE_COUNT, 
   MIN_LINE_COUNT, 
@@ -17,12 +17,9 @@ import {
   MIN_LINE_OPACITY 
 } from '@/lib/constants';
 
-interface SettingsPanelProps {
-  config: VisualizationConfig;
-  onChange: (config: Partial<VisualizationConfig>) => void;
-}
-
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
+const SettingsPanel: React.FC = () => {
+  const { config, updateConfig } = useVisualization();
+  
   return (
     <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-md rounded-lg p-4 flex flex-col gap-4 w-80 animate-fade-in border border-white/10 shadow-lg z-40">
       <p className="text-sm text-center font-medium flex items-center justify-center gap-2">
@@ -40,7 +37,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
             min={MIN_SPEED}
             max={MAX_SPEED}
             step={0.1}
-            onValueChange={([value]) => onChange({ speed: value })}
+            onValueChange={([value]) => updateConfig({ speed: value })}
           />
         </div>
         
@@ -54,7 +51,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
             min={MIN_ROTATION}
             max={MAX_ROTATION}
             step={0.1}
-            onValueChange={([value]) => onChange({ rotation: value })}
+            onValueChange={([value]) => updateConfig({ rotation: value })}
           />
         </div>
         
@@ -68,7 +65,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
             min={MIN_PERSPECTIVE}
             max={MAX_PERSPECTIVE}
             step={10}
-            onValueChange={([value]) => onChange({ perspective: value })}
+            onValueChange={([value]) => updateConfig({ perspective: value })}
           />
         </div>
         
@@ -82,7 +79,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
             min={MIN_LINE_COUNT}
             max={MAX_LINE_COUNT}
             step={1}
-            onValueChange={([value]) => onChange({ lineCount: value })}
+            onValueChange={([value]) => updateConfig({ lineCount: value })}
           />
         </div>
         
@@ -96,7 +93,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
             min={MIN_LINE_OPACITY}
             max={MAX_LINE_OPACITY}
             step={0.1}
-            onValueChange={([value]) => onChange({ lineOpacity: value })}
+            onValueChange={([value]) => updateConfig({ lineOpacity: value })}
           />
         </div>
         
@@ -105,7 +102,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
           <Button
             variant={config.pulseEffect ? "default" : "secondary"}
             size="sm"
-            onClick={() => onChange({ pulseEffect: !config.pulseEffect })}
+            onClick={() => updateConfig({ pulseEffect: !config.pulseEffect })}
             className="text-xs h-7"
           >
             {config.pulseEffect ? "On" : "Off"}

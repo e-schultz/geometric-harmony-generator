@@ -1,13 +1,14 @@
 
 import React, { useState, useRef } from 'react';
-import { ControlsProps } from '@/lib/types';
 import { VISUALIZATION_TYPES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { SlidersHorizontal, X } from 'lucide-react';
 import ControlPanel from './controls/ControlPanel';
 import SettingsPanel from './controls/SettingsPanel';
+import { useVisualization } from '@/contexts/VisualizationContext';
 
-const Controls: React.FC<ControlsProps> = ({ config, onChange, onReset }) => {
+const Controls: React.FC = () => {
+  const { config, updateConfig, resetConfig } = useVisualization();
   const [showControls, setShowControls] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   
@@ -15,16 +16,16 @@ const Controls: React.FC<ControlsProps> = ({ config, onChange, onReset }) => {
   
   const togglePause = () => {
     if (isPaused) {
-      onChange({ speed: originalSpeed.current });
+      updateConfig({ speed: originalSpeed.current });
     } else {
       originalSpeed.current = config.speed;
-      onChange({ speed: 0 });
+      updateConfig({ speed: 0 });
     }
     setIsPaused(!isPaused);
   };
   
   const handleVisualizationChange = (type: string) => {
-    onChange({ type: type as any });
+    updateConfig({ type: type as any });
   };
   
   return (
@@ -44,12 +45,12 @@ const Controls: React.FC<ControlsProps> = ({ config, onChange, onReset }) => {
         isPaused={isPaused}
         onTypeChange={handleVisualizationChange}
         onTogglePause={togglePause}
-        onReset={onReset}
+        onReset={resetConfig}
         isActive={showControls}
       />
       
       {showControls && (
-        <SettingsPanel config={config} onChange={onChange} />
+        <SettingsPanel />
       )}
     </>
   );

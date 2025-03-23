@@ -1,8 +1,11 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { VisualizerProps, Line } from '@/lib/types';
-import { project, generateLines } from '@/lib/animations';
 
-const Visualizer: React.FC<VisualizerProps> = ({ config }) => {
+import React, { useRef, useEffect, useState } from 'react';
+import { Line } from '@/lib/types';
+import { project, generateLines } from '@/lib/animations';
+import { useVisualization } from '@/contexts/VisualizationContext';
+
+const Visualizer: React.FC = () => {
+  const { config } = useVisualization();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });

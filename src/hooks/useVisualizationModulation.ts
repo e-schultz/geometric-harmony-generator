@@ -7,7 +7,7 @@ interface UseVisualizationModulationProps {
   timeDuration: number;
   timeRemaining: number;
   currentVisualization: VisualizationType;
-  onVisualizationChange?: (config: Partial<VisualizationConfig>) => void;
+  onVisualizationChange: (config: Partial<VisualizationConfig>) => void;
 }
 
 export const useVisualizationModulation = ({

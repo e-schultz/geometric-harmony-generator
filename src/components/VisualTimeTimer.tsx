@@ -1,27 +1,25 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { VisualizationConfig, VisualizationType } from '@/lib/types';
 import TimeGridVisualizer from './TimeGridVisualizer';
 import TimerControls from './TimerControls';
 import { useTimer } from '@/hooks/useTimer';
 import { useVisualizationModulation } from '@/hooks/useVisualizationModulation';
+import { useVisualization } from '@/contexts/VisualizationContext';
 
 interface VisualTimeTimerProps {
   timeDuration: number; // Total duration in minutes
   interval: number; // Interval in seconds
   className?: string;
-  currentVisualization: VisualizationType; // Current visualization type chosen by user
-  onVisualizationChange?: (config: Partial<VisualizationConfig>) => void;
 }
 
 const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
   timeDuration,
   interval,
   className,
-  currentVisualization,
-  onVisualizationChange
 }) => {
+  const { config, updateConfig } = useVisualization();
+  
   // Speed multiplier for testing (higher = faster)
   const speedMultiplier = 5;
   
@@ -41,8 +39,8 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
   useVisualizationModulation({
     timeDuration,
     timeRemaining,
-    currentVisualization,
-    onVisualizationChange
+    currentVisualization: config.type,
+    onVisualizationChange: updateConfig
   });
   
   return (
