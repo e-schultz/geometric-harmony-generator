@@ -5,7 +5,9 @@ import Controls from '@/components/Controls';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import VisualTimeTimer from '@/components/VisualTimeTimer';
+import Synthesizer from '@/components/Synthesizer';
 import { VisualizationProvider, useVisualization } from '@/contexts/VisualizationContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const IndexContent: React.FC = () => {
   const { config, updateConfig, showTimer, toggleTimer } = useVisualization();
@@ -41,6 +43,22 @@ const IndexContent: React.FC = () => {
       
       {/* Controls */}
       <Controls />
+      
+      {/* Synthesizer */}
+      <div className="fixed left-8 bottom-24 z-40 w-80 pointer-events-auto">
+        <Tabs defaultValue="visualizer" className="w-full">
+          <TabsList className="w-full bg-black/50 backdrop-blur-md">
+            <TabsTrigger value="visualizer" className="flex-1">Visualizer</TabsTrigger>
+            <TabsTrigger value="synth" className="flex-1">Synthesizer</TabsTrigger>
+          </TabsList>
+          <TabsContent value="visualizer">
+            {/* Visualizer controls remain here */}
+          </TabsContent>
+          <TabsContent value="synth">
+            <Synthesizer />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
