@@ -83,6 +83,16 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
+  // Calculate which squares should be filled based on elapsed time
+  const getFilledSquares = () => {
+    const totalSeconds = timeDuration * 60;
+    const elapsedSeconds = totalSeconds - timeRemaining;
+    const filledMinutes = Math.floor(elapsedSeconds / 60);
+    return filledMinutes;
+  };
+  
+  const filledSquares = getFilledSquares();
+  
   return (
     <div className={cn("fixed inset-0 flex flex-col items-center justify-center pointer-events-none z-10", className)}>
       {/* Full viewport grid overlay */}
@@ -94,10 +104,15 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
         }}
       >
         {Array.from({ length: totalSquares }).map((_, idx) => {
+          const isFilled = idx < filledSquares;
+          
           return (
             <div 
               key={idx}
-              className="relative rounded-sm border border-white/60 bg-transparent"
+              className={cn(
+                "relative rounded-sm border border-white/60",
+                isFilled ? "bg-white/30" : "bg-transparent"
+              )}
             />
           );
         })}
