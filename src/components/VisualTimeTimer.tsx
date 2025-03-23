@@ -86,15 +86,28 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
-  // Calculate which squares should be filled based on elapsed time
-  const getFilledSquares = () => {
+  // Calculate how filled each square should be
+  const getSquareFilledPercentage = (squareIndex: number) => {
     const totalSeconds = timeDuration * 60;
     const elapsedSeconds = totalSeconds - timeRemaining;
-    const filledMinutes = Math.floor(elapsedSeconds / 60);
-    return filledMinutes;
+    
+    // Calculate which minute we're on (which square should be filling)
+    const currentFillingSquare = Math.floor(elapsedSeconds / 60);
+    
+    // For squares before the current one, they should be 100% filled
+    if (squareIndex < currentFillingSquare) {
+      return 100;
+    }
+    
+    // For the current square being filled, calculate the percentage
+    if (squareIndex === currentFillingSquare) {
+      const secondsInCurrentMinute = elapsedSeconds % 60;
+      return (secondsInCurrentMinute / 60) * 100;
+    }
+    
+    // For squares after the current one, they should be 0% filled
+    return 0;
   };
-  
-  const filledSquares = getFilledSquares();
   
   return (
     <div className={cn("fixed inset-0 flex flex-col items-center justify-center pointer-events-none z-10", className)}>
@@ -107,16 +120,19 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
         }}
       >
         {Array.from({ length: totalSquares }).map((_, idx) => {
-          const isFilled = idx < filledSquares;
+          const fillPercentage = getSquareFilledPercentage(idx);
           
           return (
             <div 
               key={idx}
-              className={cn(
-                "relative rounded-sm border border-white/60",
-                isFilled ? "bg-white/60" : "bg-transparent"
-              )}
-            />
+              className="relative rounded-sm border border-white/60 overflow-hidden"
+            >
+              {/* Filled area - uses a dynamic height based on fill percentage */}
+              <div 
+                className="absolute bottom-0 left-0 right-0 bg-white/60 transition-all duration-300 ease-linear"
+                style={{ height: `${fillPercentage}%` }}
+              />
+            </div>
           );
         })}
       </div>
