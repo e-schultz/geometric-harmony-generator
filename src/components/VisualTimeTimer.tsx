@@ -1,17 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { VisualizationConfig } from '@/lib/types';
 
 interface VisualTimeTimerProps {
   timeDuration: number; // Total duration in minutes
   interval: number; // Interval in seconds
   className?: string;
+  onVisualizationChange?: (config: Partial<VisualizationConfig>) => void;
 }
 
 const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
   timeDuration,
   interval,
-  className
+  className,
+  onVisualizationChange
 }) => {
   const [timeRemaining, setTimeRemaining] = useState(timeDuration * 60); // Convert minutes to seconds
   const [isRunning, setIsRunning] = useState(false);
@@ -63,6 +66,46 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
     setIsRunning(false);
     setTimeRemaining(timeDuration * 60);
   };
+  
+  // Modulate visualization based on timer progress
+  useEffect(() => {
+    if (!onVisualizationChange) return;
+    
+    // Calculate progress from 0 to 1
+    const totalSeconds = timeDuration * 60;
+    const progress = 1 - (timeRemaining / totalSeconds);
+    
+    // Modulate visualization parameters based on timer progress
+    const newConfig: Partial<VisualizationConfig> = {
+      // Increase rotation speed as timer progresses
+      rotation: 0.5 + progress * 1.5,
+      
+      // Adjust perspective based on progress (zoom in as time goes by)
+      perspective: 800 - progress * 300,
+      
+      // Increase line count as we get closer to the end
+      lineCount: Math.floor(15 + progress * 10),
+      
+      // Pulse effect gets faster towards the end
+      pulseEffect: true,
+      
+      // Line opacity increases for more intensity
+      lineOpacity: 0.8 + progress * 0.2,
+    };
+    
+    // Switch visualization type at certain thresholds
+    if (progress > 0.75) {
+      newConfig.type = 'particles';
+    } else if (progress > 0.5) {
+      newConfig.type = 'polyhedron';
+    } else if (progress > 0.25) {
+      newConfig.type = 'grid';
+    } else {
+      newConfig.type = 'tunnel';
+    }
+    
+    onVisualizationChange(newConfig);
+  }, [timeRemaining, timeDuration, onVisualizationChange]);
   
   // Timer effect - now runs faster based on speedMultiplier
   useEffect(() => {

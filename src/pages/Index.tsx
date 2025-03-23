@@ -50,7 +50,13 @@ const Index: React.FC = () => {
       <Visualizer config={config} />
       
       {/* Timer Overlay (conditionally rendered) */}
-      {showTimer && <VisualTimeTimer timeDuration={25} interval={15} />}
+      {showTimer && (
+        <VisualTimeTimer 
+          timeDuration={25} 
+          interval={15} 
+          onVisualizationChange={handleConfigChange}
+        />
+      )}
       
       {/* UI Overlay */}
       <div className="absolute inset-0 flex flex-col pointer-events-none">
