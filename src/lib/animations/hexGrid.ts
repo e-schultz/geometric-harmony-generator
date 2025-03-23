@@ -1,6 +1,7 @@
 
 import { Point3D, Line } from '../types';
 import { rotateX, rotateY, rotateZ } from './utils';
+import { sineWave } from '../waveGenerators';
 
 // Function to generate a single hexagon with given parameters
 const generateHexagon = (
@@ -33,7 +34,7 @@ const generateHexagon = (
   return lines;
 };
 
-// Function to generate nested hexagons with recursive collapsing effect
+// Function to generate Super Hexagon style with expanding outward effect (reverse)
 export const generateHexGridLines = (
   lineCount: number,
   depth: number,
@@ -44,45 +45,77 @@ export const generateHexGridLines = (
 ): Line[] => {
   const lines: Line[] = [];
   const t = time / 1000;
-  const maxRadius = Math.min(width, height) * 0.4;
+  const maxRadius = Math.min(width, height) * 0.45;
   
   // Calculate how many hexagon rings to create based on lineCount
-  // We'll create multiple hexagons at different scales to create the recursive effect
-  const hexagonCount = Math.max(3, Math.min(10, Math.floor(lineCount / 3)));
+  const hexagonCount = Math.max(3, Math.min(12, Math.floor(lineCount / 2)));
   
   // Create animation parameters
-  const baseRotation = t * rotation * 0.5;
-  const pulseSpeed = t * 0.5;
-  const collapsePhase = (Math.sin(pulseSpeed) + 1) / 2; // 0 to 1 value for collapse animation
+  const baseRotation = t * rotation;
   
-  // Generate multiple nested hexagons with progressive scaling and rotation
+  // Super Hexagon style: layers of hexagons with alternating rotation
   for (let i = 0; i < hexagonCount; i++) {
+    // Calculate a normalized position in the sequence (0 to 1)
     const ringRatio = i / hexagonCount;
-    const hexRotation = baseRotation + ringRatio * Math.PI / 3; // Each ring has slightly different rotation
     
-    // Calculate radius with pulsing effect
-    // Larger hexagons collapse faster than smaller ones
-    const ringCollapsePhase = (collapsePhase + ringRatio) % 1;
-    const scaleFactor = 1 - 0.5 * Math.pow(ringCollapsePhase, 2);
-    const radius = maxRadius * (1 - ringRatio * 0.8) * scaleFactor;
+    // Super Hexagon style: create a spinning effect with alternating directions
+    const hexRotation = baseRotation + (i % 2 === 0 ? 1 : -1) * ringRatio * Math.PI / 3;
     
-    // Calculate depth position (z) with oscillation to create dynamic 3D effect
-    const zPosition = -depth * 0.5 + Math.sin(t + ringRatio * Math.PI * 2) * 50;
+    // Expansion animation (reverse of collapse)
+    // As time progresses, hexagons expand outward from center
+    const expansionPhase = ((t * 0.5) % 1 + ringRatio) % 1; // Creates a staggered expansion
+    const expansionScale = Math.pow(expansionPhase, 1.5); // Accelerating outward
     
-    // Calculate opacity (inner rings are more transparent)
-    const opacity = 0.3 + 0.7 * ringRatio;
+    // Radius grows as the expansion progresses (Super Hexagon style)
+    const radius = maxRadius * expansionScale;
     
-    // Generate the hexagon
-    const hexLines = generateHexagon(0, 0, zPosition, radius, hexRotation, opacity);
+    // Smaller hexagons are closer to viewer (higher z) for perspective effect
+    const zPosition = -depth * 0.8 + depth * 0.6 * (1 - expansionScale);
     
-    // Apply 3D rotations to each hexagon
-    const rotatedLines = hexLines.map(line => {
-      // Apply different rotation angles to create a more interesting 3D effect
+    // Opacity fades as hexagons expand outward
+    const opacity = 1 - 0.7 * expansionScale;
+    
+    // Generate the primary hexagon at this layer
+    const mainHex = generateHexagon(0, 0, zPosition, radius, hexRotation, opacity);
+    lines.push(...mainHex);
+    
+    // Super Hexagon style: Add inner structure with different rotation
+    if (radius > 10) {
+      const innerHex = generateHexagon(
+        0, 0, zPosition + 5, 
+        radius * 0.7, 
+        hexRotation + Math.PI / 6, 
+        opacity * 0.8
+      );
+      lines.push(...innerHex);
+      
+      // Add spokes connecting the hexagons (typical in Super Hexagon)
+      if (i % 2 === 0) {
+        for (let j = 0; j < 6; j++) {
+          const spokeAngle = (j / 6) * Math.PI * 2 + hexRotation;
+          const innerRadius = radius * 0.7;
+          const outerRadius = radius;
+          
+          const x1 = innerRadius * Math.cos(spokeAngle);
+          const y1 = innerRadius * Math.sin(spokeAngle);
+          const x2 = outerRadius * Math.cos(spokeAngle);
+          const y2 = outerRadius * Math.sin(spokeAngle);
+          
+          lines.push({
+            start: { x: x1, y: y1, z: zPosition + 2 },
+            end: { x: x2, y: y2, z: zPosition },
+            opacity: opacity * 0.9
+          });
+        }
+      }
+    }
+    
+    // Apply subtle 3D rotation to the entire structure
+    lines = lines.map(line => {
       const rotate = (p: Point3D): Point3D => {
         let rotated = { ...p };
-        rotated = rotateX(rotated, baseRotation * 0.2);
-        rotated = rotateY(rotated, baseRotation * 0.3);
-        rotated = rotateZ(rotated, hexRotation * 0.1);
+        rotated = rotateX(rotated, sineWave(t, 0.2, 0.1, 0));
+        rotated = rotateY(rotated, sineWave(t, 0.3, 0.1, 0));
         return rotated;
       };
       
@@ -92,36 +125,53 @@ export const generateHexGridLines = (
         opacity: line.opacity
       };
     });
+  }
+  
+  // Add pulsing wall-like obstacles (characteristic of Super Hexagon)
+  const wallCount = 6;
+  const wallBaseRotation = baseRotation * 0.3;
+  
+  for (let w = 0; w < wallCount; w++) {
+    const wallAngle = (w / wallCount) * Math.PI * 2 + wallBaseRotation;
+    const wallPhase = ((t * 0.7 + w / wallCount) % 1);
     
-    lines.push(...rotatedLines);
-    
-    // Add connecting lines between adjacent rings to emphasize the recursive nature
-    if (i > 0 && i < hexagonCount - 1) {
-      const connectCount = 3; // Number of connection lines between rings
-      for (let j = 0; j < connectCount; j++) {
-        const angle = (j / connectCount) * Math.PI * 2 + hexRotation;
-        const innerRadius = maxRadius * (1 - (ringRatio + 1/hexagonCount) * 0.8) * scaleFactor;
-        const outerRadius = radius;
-        
-        const x1 = outerRadius * Math.cos(angle);
-        const y1 = outerRadius * Math.sin(angle);
-        const x2 = innerRadius * Math.cos(angle);
-        const y2 = innerRadius * Math.sin(angle);
-        
-        const connectLine = {
-          start: { x: x1, y: y1, z: zPosition },
-          end: { x: x2, y: y2, z: zPosition - 10 },
-          opacity: opacity * 0.7
-        };
-        
-        const rotatedConnectLine = {
-          start: rotateX(rotateY(rotateZ(connectLine.start, hexRotation * 0.1), baseRotation * 0.3), baseRotation * 0.2),
-          end: rotateX(rotateY(rotateZ(connectLine.end, hexRotation * 0.1), baseRotation * 0.3), baseRotation * 0.2),
-          opacity: connectLine.opacity
-        };
-        
-        lines.push(rotatedConnectLine);
-      }
+    // Only render walls that are moving outward (reverse of normal Super Hexagon)
+    if (wallPhase > 0.2 && wallPhase < 0.8) {
+      const wallRadius = maxRadius * 1.2 * wallPhase;
+      const wallThickness = maxRadius * 0.15;
+      
+      const innerPoint1 = {
+        x: (wallRadius - wallThickness) * Math.cos(wallAngle - 0.15),
+        y: (wallRadius - wallThickness) * Math.sin(wallAngle - 0.15),
+        z: -depth * 0.5
+      };
+      
+      const outerPoint1 = {
+        x: wallRadius * Math.cos(wallAngle - 0.15),
+        y: wallRadius * Math.sin(wallAngle - 0.15),
+        z: -depth * 0.5
+      };
+      
+      const innerPoint2 = {
+        x: (wallRadius - wallThickness) * Math.cos(wallAngle + 0.15),
+        y: (wallRadius - wallThickness) * Math.sin(wallAngle + 0.15),
+        z: -depth * 0.5
+      };
+      
+      const outerPoint2 = {
+        x: wallRadius * Math.cos(wallAngle + 0.15),
+        y: wallRadius * Math.sin(wallAngle + 0.15),
+        z: -depth * 0.5
+      };
+      
+      const wallOpacity = 0.7 * (1 - Math.abs(wallPhase - 0.5) * 2);
+      
+      lines.push(
+        { start: innerPoint1, end: outerPoint1, opacity: wallOpacity },
+        { start: outerPoint1, end: outerPoint2, opacity: wallOpacity },
+        { start: outerPoint2, end: innerPoint2, opacity: wallOpacity },
+        { start: innerPoint2, end: innerPoint1, opacity: wallOpacity }
+      );
     }
   }
   
