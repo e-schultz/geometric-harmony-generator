@@ -43,7 +43,7 @@ export const generateHexGridLines = (
   rotation: number,
   time: number
 ): Line[] => {
-  const lines: Line[] = [];
+  let lines: Line[] = [];
   const t = time / 1000;
   const maxRadius = Math.min(width, height) * 0.45;
   
@@ -109,23 +109,25 @@ export const generateHexGridLines = (
         }
       }
     }
-    
-    // Apply subtle 3D rotation to the entire structure
-    lines = lines.map(line => {
-      const rotate = (p: Point3D): Point3D => {
-        let rotated = { ...p };
-        rotated = rotateX(rotated, sineWave(t, 0.2, 0.1, 0));
-        rotated = rotateY(rotated, sineWave(t, 0.3, 0.1, 0));
-        return rotated;
-      };
-      
-      return {
-        start: rotate(line.start),
-        end: rotate(line.end),
-        opacity: line.opacity
-      };
-    });
   }
+  
+  // Apply subtle 3D rotation to the entire structure
+  const rotatedLines = lines.map(line => {
+    const rotate = (p: Point3D): Point3D => {
+      let rotated = { ...p };
+      rotated = rotateX(rotated, sineWave(t, 0.2, 0.1, 0));
+      rotated = rotateY(rotated, sineWave(t, 0.3, 0.1, 0));
+      return rotated;
+    };
+    
+    return {
+      start: rotate(line.start),
+      end: rotate(line.end),
+      opacity: line.opacity
+    };
+  });
+  
+  lines = rotatedLines;
   
   // Add pulsing wall-like obstacles (characteristic of Super Hexagon)
   const wallCount = 6;
