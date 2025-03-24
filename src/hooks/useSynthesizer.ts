@@ -1,8 +1,11 @@
+
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { SynthesizerParams, AudioNodes } from './synthesizer/types';
-import { createAudioContext, cleanupAudioNodes, updateFilterParams } from './synthesizer/audioUtils';
+import { SynthesizerParams } from './synthesizer/types';
+import { createAudioContext, cleanupAudioNodes } from './synthesizer/audioUtils';
 import { startSequencer, stopSequencer } from './synthesizer/sequencer';
 import { createThrottleUpdate } from './synthesizer/parameterUtils';
+import { setupParameterState } from './synthesizer/stateManager';
+import { updateFilterParams } from './synthesizer/filterUtils';
 
 export type { SynthesizerParams };
 
@@ -24,39 +27,26 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
   // Merge defaults with provided params
   const params = { ...defaultParams, ...initialParams };
 
-  // State for parameters
-  const [frequency, setFrequencyState] = useState(params.frequency);
-  const [attack, setAttackState] = useState(params.attack);
-  const [decay, setDecayState] = useState(params.decay);
-  const [sustain, setSustainState] = useState(params.sustain);
-  const [release, setReleaseState] = useState(params.release);
-  const [isPlaying, setIsPlaying] = useState(params.isPlaying);
-  const [bpm, setBpmState] = useState(params.bpm);
-  const [pattern, setPattern] = useState(params.pattern);
-  const [filterCutoff, setFilterCutoffState] = useState(params.filterCutoff);
-  const [filterResonance, setFilterResonanceState] = useState(params.filterResonance);
+  // Setup state and refs for all parameters
+  const {
+    // State values
+    frequency, attack, decay, sustain, release, isPlaying, bpm, pattern, filterCutoff, filterResonance,
+    // State setters
+    setFrequencyState, setAttackState, setDecayState, setSustainState, setReleaseState, 
+    setIsPlaying, setBpmState, setPattern, setFilterCutoffState, setFilterResonanceState,
+    // Parameter refs
+    frequencyRef, attackRef, decayRef, sustainRef, releaseRef, bpmRef, isPlayingRef,
+    filterCutoffRef, filterResonanceRef,
+    // Throttling refs
+    lastUpdateTimeRef, throttleTimeRef
+  } = setupParameterState(params);
 
   // Refs for Web Audio API
   const audioContextRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
-  const activeOscillators = useRef<Map<number, AudioNodes>>(new Map());
+  const activeOscillators = useRef<Map<number, import('./synthesizer/types').AudioNodes>>(new Map());
   const intervalRef = useRef<number | null>(null);
   const stepRef = useRef<number>(0);
-  
-  // Refs to hold current parameter values to avoid state updates during playback
-  const frequencyRef = useRef(frequency);
-  const attackRef = useRef(attack);
-  const decayRef = useRef(decay);
-  const sustainRef = useRef(sustain);
-  const releaseRef = useRef(release);
-  const bpmRef = useRef(bpm);
-  const isPlayingRef = useRef(isPlaying);
-  const filterCutoffRef = useRef(filterCutoff);
-  const filterResonanceRef = useRef(filterResonance);
-  
-  // Throttling mechanism
-  const lastUpdateTimeRef = useRef(Date.now());
-  const throttleTimeRef = useRef(50); // 50ms throttle for better responsiveness
   
   // Create throttled update function
   const throttleUpdate = useCallback(
