@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import TimeGridVisualizer from './TimeGridVisualizer';
 import TimerControls from './TimerControls';
@@ -7,6 +7,7 @@ import TimerSettings from './TimerSettings';
 import { useTimer } from '@/hooks/useTimer';
 import { useVisualizationModulation } from '@/hooks/useVisualizationModulation';
 import { useVisualization } from '@/contexts/VisualizationContext';
+import { toast } from 'sonner';
 
 interface VisualTimeTimerProps {
   initialDuration?: number; // Default duration in minutes
@@ -22,20 +23,40 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
   const [timerDuration, setTimerDuration] = useState(initialDuration);
   const { config, updateConfig } = useVisualization();
   
+  // Handle timer completion
+  const handleTimerComplete = useCallback(() => {
+    toast('Timer complete!', {
+      position: 'top-center',
+      className: 'bg-black/70 backdrop-blur-md border border-white/10'
+    });
+  }, []);
+  
   // Speed multiplier for testing (higher = faster)
   const speedMultiplier = 5;
   
-  // Use our custom timer hook
+  // Use our custom timer hook with error handling
   const { 
     timeRemaining, 
     formattedTime, 
     isRunning, 
     toggleTimer, 
-    resetTimer 
+    resetTimer,
+    error
   } = useTimer({ 
     duration: timerDuration, 
-    speedMultiplier 
+    speedMultiplier,
+    onComplete: handleTimerComplete
   });
+  
+  // Show error message if timer has an error
+  React.useEffect(() => {
+    if (error) {
+      toast.error(`Timer error: ${error}`, {
+        position: 'top-center',
+        className: 'bg-black/70 backdrop-blur-md border-red-500/20'
+      });
+    }
+  }, [error]);
   
   // Use our visualization modulation hook
   useVisualizationModulation({
@@ -45,11 +66,15 @@ const VisualTimeTimer: React.FC<VisualTimeTimerProps> = ({
     onVisualizationChange: updateConfig
   });
   
-  const handleDurationChange = (minutes: number) => {
+  const handleDurationChange = useCallback((minutes: number) => {
     setTimerDuration(minutes);
     // Reset the timer when the duration changes
     resetTimer();
-  };
+    toast(`Timer set to ${minutes} minutes`, {
+      position: 'top-center',
+      className: 'bg-black/70 backdrop-blur-md border border-white/10'
+    });
+  }, [resetTimer]);
   
   return (
     <div className={cn("fixed inset-0 flex flex-col items-center justify-center pointer-events-none z-10", className)}>

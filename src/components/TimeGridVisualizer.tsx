@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 interface TimeGridVisualizerProps {
   totalSquares: number;
@@ -14,59 +14,61 @@ const TimeGridVisualizer: React.FC<TimeGridVisualizerProps> = ({
   timeDuration,
   className
 }) => {
-  // Calculate grid dimensions based on viewport aspect ratio
-  const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
-  const [gridDimensions, setGridDimensions] = useState({ cols: 1, rows: 1 });
+  // State to track viewport dimensions
+  const [dimensions, setDimensions] = useState({ 
+    width: window.innerWidth, 
+    height: window.innerHeight 
+  });
   
-  // Update dimensions on window resize
+  // Calculate grid dimensions with useMemo to avoid recalculating on every render
+  const gridDimensions = useMemo(() => {
+    const aspectRatio = dimensions.width / dimensions.height;
+    let cols = Math.ceil(Math.sqrt(totalSquares * aspectRatio));
+    let rows = Math.ceil(totalSquares / cols);
+    
+    // Ensure minimum dimensions for better visualization
+    if (cols < 3 && totalSquares >= 3) cols = 3;
+    if (rows < 3 && totalSquares >= 3) rows = 3;
+    
+    return { cols, rows };
+  }, [dimensions.width, dimensions.height, totalSquares]);
+  
+  // Handle window resize with debounce for performance
   useEffect(() => {
-    const updateDimensions = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      setDimensions({ width, height });
-      
-      // Calculate grid dimensions based on aspect ratio and total squares
-      const aspectRatio = width / height;
-      let cols = Math.ceil(Math.sqrt(totalSquares * aspectRatio));
-      let rows = Math.ceil(totalSquares / cols);
-      
-      // Adjust if we have too few in either dimension
-      if (cols < 3 && totalSquares >= 3) cols = 3;
-      if (rows < 3 && totalSquares >= 3) rows = 3;
-      
-      setGridDimensions({ cols, rows });
+    let resizeTimeout: number;
+    
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = window.setTimeout(() => {
+        setDimensions({
+          width: window.innerWidth,
+          height: window.innerHeight
+        });
+      }, 150); // Debounce resize events
     };
     
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
+    window.addEventListener('resize', handleResize);
     
     return () => {
-      window.removeEventListener('resize', updateDimensions);
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimeout);
     };
-  }, [totalSquares]);
+  }, []);
   
-  // Calculate how filled each square should be
-  const getSquareFilledPercentage = (squareIndex: number) => {
+  // Calculate all square fill percentages at once to avoid recalculation in render loop
+  const squareFillPercentages = useMemo(() => {
     const totalSeconds = timeDuration * 60;
     const elapsedSeconds = totalSeconds - timeRemaining;
-    
-    // Calculate which minute we're on (which square should be filling)
     const currentFillingSquare = Math.floor(elapsedSeconds / 60);
+    const secondsInCurrentMinute = elapsedSeconds % 60;
+    const currentSquarePercentage = (secondsInCurrentMinute / 60) * 100;
     
-    // For squares before the current one, they should be 100% filled
-    if (squareIndex < currentFillingSquare) {
-      return 100;
-    }
-    
-    // For the current square being filled, calculate the percentage
-    if (squareIndex === currentFillingSquare) {
-      const secondsInCurrentMinute = elapsedSeconds % 60;
-      return (secondsInCurrentMinute / 60) * 100;
-    }
-    
-    // For squares after the current one, they should be 0% filled
-    return 0;
-  };
+    return Array.from({ length: totalSquares }).map((_, idx) => {
+      if (idx < currentFillingSquare) return 100;
+      if (idx === currentFillingSquare) return currentSquarePercentage;
+      return 0;
+    });
+  }, [timeRemaining, timeDuration, totalSquares]);
   
   return (
     <div 
@@ -76,24 +78,19 @@ const TimeGridVisualizer: React.FC<TimeGridVisualizerProps> = ({
         gridTemplateRows: `repeat(${gridDimensions.rows}, 1fr)`
       }}
     >
-      {Array.from({ length: totalSquares }).map((_, idx) => {
-        const fillPercentage = getSquareFilledPercentage(idx);
-        
-        return (
+      {squareFillPercentages.map((fillPercentage, idx) => (
+        <div 
+          key={idx}
+          className="relative rounded-sm border border-white/60 overflow-hidden"
+        >
           <div 
-            key={idx}
-            className="relative rounded-sm border border-white/60 overflow-hidden"
-          >
-            {/* Filled area - uses a dynamic height based on fill percentage with increased transparency */}
-            <div 
-              className="absolute bottom-0 left-0 right-0 bg-white/40 transition-all duration-300 ease-linear"
-              style={{ height: `${fillPercentage}%` }}
-            />
-          </div>
-        );
-      })}
+            className="absolute bottom-0 left-0 right-0 bg-white/40 transition-all duration-300 ease-linear"
+            style={{ height: `${fillPercentage}%` }}
+          />
+        </div>
+      ))}
     </div>
   );
 };
 
-export default TimeGridVisualizer;
+export default React.memo(TimeGridVisualizer);
