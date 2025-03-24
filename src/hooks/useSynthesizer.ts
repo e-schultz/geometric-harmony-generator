@@ -1,18 +1,11 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { SynthesizerParams, AudioNodes } from './synthesizer/types';
+import { createAudioContext, cleanupAudioNodes, updateFilterParams } from './synthesizer/audioUtils';
+import { startSequencer, stopSequencer } from './synthesizer/sequencer';
+import { createThrottleUpdate } from './synthesizer/parameterUtils';
 
-export interface SynthesizerParams {
-  frequency: number;
-  attack: number;
-  decay: number;
-  sustain: number;
-  release: number;
-  isPlaying: boolean;
-  bpm: number;
-  pattern: number[];
-  filterCutoff: number; // Added filter cutoff parameter
-  filterResonance: number; // Added filter resonance parameter
-}
+export { SynthesizerParams };
 
 export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) => {
   // Default parameters
@@ -47,7 +40,7 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
   // Refs for Web Audio API
   const audioContextRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
-  const activeOscillators = useRef<Map<number, { osc: OscillatorNode, gain: GainNode, filter: BiquadFilterNode }>>(new Map());
+  const activeOscillators = useRef<Map<number, AudioNodes>>(new Map());
   const intervalRef = useRef<number | null>(null);
   const stepRef = useRef<number>(0);
   
@@ -66,25 +59,11 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
   const lastUpdateTimeRef = useRef(Date.now());
   const throttleTimeRef = useRef(50); // 50ms throttle for better responsiveness
   
-  // Helper function for throttled parameter updates
-  const throttleUpdate = useCallback((
-    value: number, 
-    ref: React.MutableRefObject<number>, 
-    setState: React.Dispatch<React.SetStateAction<number>>
-  ) => {
-    const now = Date.now();
-    ref.current = value; // Always update ref immediately
-    
-    if (now - lastUpdateTimeRef.current > throttleTimeRef.current) {
-      lastUpdateTimeRef.current = now;
-      setState(value);
-    } else {
-      // Schedule a delayed state update
-      setTimeout(() => {
-        setState(ref.current);
-      }, throttleTimeRef.current);
-    }
-  }, []);
+  // Create throttled update function
+  const throttleUpdate = useCallback(
+    createThrottleUpdate(lastUpdateTimeRef, throttleTimeRef), 
+    []
+  );
   
   // Throttled parameter setters
   const setFrequency = useCallback((value: number) => {
@@ -114,8 +93,8 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
     if (isPlayingRef.current && intervalRef.current) {
       // Use a minor delay to avoid race conditions
       setTimeout(() => {
-        stopSequencer();
-        startSequencer();
+        handleStopSequencer();
+        handleStartSequencer();
       }, 10);
     }
   }, [throttleUpdate]);
@@ -125,41 +104,33 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
     throttleUpdate(value, filterCutoffRef, setFilterCutoffState);
     
     // Update cutoff frequency for all active oscillators in real-time
-    activeOscillators.current.forEach(node => {
-      try {
-        if (node.filter) {
-          node.filter.frequency.setValueAtTime(value, audioContextRef.current?.currentTime || 0);
-        }
-      } catch (error) {
-        console.error("Error updating filter cutoff:", error);
-      }
-    });
+    updateFilterParams(
+      activeOscillators.current, 
+      'frequency', 
+      value, 
+      audioContextRef.current?.currentTime || 0
+    );
   }, [throttleUpdate]);
   
   const setFilterResonance = useCallback((value: number) => {
     throttleUpdate(value, filterResonanceRef, setFilterResonanceState);
     
     // Update resonance for all active oscillators in real-time
-    activeOscillators.current.forEach(node => {
-      try {
-        if (node.filter) {
-          node.filter.Q.setValueAtTime(value, audioContextRef.current?.currentTime || 0);
-        }
-      } catch (error) {
-        console.error("Error updating filter resonance:", error);
-      }
-    });
+    updateFilterParams(
+      activeOscillators.current, 
+      'Q', 
+      value, 
+      audioContextRef.current?.currentTime || 0
+    );
   }, [throttleUpdate]);
 
   // Initialize audio context
   useEffect(() => {
     if (!audioContextRef.current) {
       try {
-        audioContextRef.current = new AudioContext();
-        // Create main gain node for master volume
-        gainNodeRef.current = audioContextRef.current.createGain();
-        gainNodeRef.current.gain.value = 0.5; // Set master volume to 50%
-        gainNodeRef.current.connect(audioContextRef.current.destination);
+        const { context, masterGain } = createAudioContext();
+        audioContextRef.current = context;
+        gainNodeRef.current = masterGain;
       } catch (error) {
         console.error("Failed to initialize audio context:", error);
       }
@@ -176,146 +147,45 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
 
   // Thorough audio cleanup function
   const cleanupAudio = useCallback(() => {
-    // Stop all active oscillators
-    activeOscillators.current.forEach((node, id) => {
-      try {
-        node.osc.stop();
-        node.osc.disconnect();
-        node.gain.disconnect();
-        node.filter.disconnect();
-      } catch (error) {
-        console.error("Error cleaning up audio node:", error);
-      }
-    });
-    activeOscillators.current.clear();
-  }, []);
-
-  // Create a note with ADSR envelope and filter
-  const createNote = useCallback((time: number, freq: number) => {
-    if (!audioContextRef.current || !gainNodeRef.current) return;
-
-    try {
-      const ctx = audioContextRef.current;
-      const osc = ctx.createOscillator();
-      const noteGain = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-      const noteId = Date.now();
-
-      // Set oscillator type and frequency
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(freq, time);
-
-      // Configure filter
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(filterCutoffRef.current, time);
-      filter.Q.setValueAtTime(filterResonanceRef.current, time);
-
-      // Connect the signal path: oscillator -> filter -> note gain -> master gain
-      osc.connect(filter);
-      filter.connect(noteGain);
-      noteGain.connect(gainNodeRef.current);
-
-      // Create ADSR envelope - use ref values for most up-to-date parameters
-      const a = attackRef.current;
-      const d = decayRef.current;
-      const s = sustainRef.current;
-      const r = releaseRef.current;
-
-      noteGain.gain.setValueAtTime(0, time);
-      noteGain.gain.linearRampToValueAtTime(1, time + a);
-      noteGain.gain.linearRampToValueAtTime(s, time + a + d);
-      noteGain.gain.setValueAtTime(s, time + a + d);
-      noteGain.gain.linearRampToValueAtTime(0, time + a + d + r);
-
-      // Store the oscillator and its gain node for cleanup
-      activeOscillators.current.set(noteId, { osc, gain: noteGain, filter });
-
-      // Start and stop the oscillator
-      osc.start(time);
-      osc.stop(time + a + d + r + 0.1);
-
-      // Auto-remove from active oscillators map when done
-      setTimeout(() => {
-        activeOscillators.current.delete(noteId);
-      }, (a + d + r + 0.2) * 1000);
-    } catch (error) {
-      console.error("Error creating note:", error);
-    }
+    cleanupAudioNodes(activeOscillators.current);
   }, []);
 
   // Start the sequencer
-  const startSequencer = useCallback(() => {
-    if (!audioContextRef.current || isPlayingRef.current) return;
-
+  const handleStartSequencer = useCallback(() => {
+    startSequencer(
+      audioContextRef.current,
+      gainNodeRef.current,
+      activeOscillators,
+      isPlayingRef,
+      stepRef,
+      pattern,
+      bpmRef,
+      frequencyRef,
+      attackRef,
+      decayRef,
+      sustainRef,
+      releaseRef,
+      filterCutoffRef,
+      filterResonanceRef,
+      intervalRef
+    );
     setIsPlaying(true);
-    isPlayingRef.current = true;
-    
-    const ctx = audioContextRef.current;
-    
-    // Resume audio context if suspended
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(console.error);
-    }
-
-    // Reset step index
-    stepRef.current = 0;
-    
-    // Use a more accurate timing mechanism
-    const scheduleAheadTime = 0.1; // Schedule 100ms ahead
-    let lastScheduleTime = ctx.currentTime;
-    
-    // Start sequencer loop using accurate timing
-    const loop = () => {
-      if (!isPlayingRef.current || !audioContextRef.current) return;
-      
-      const currentStepTime = 60 / bpmRef.current / 2; // 16th notes
-      const currentTime = audioContextRef.current.currentTime;
-      
-      // Schedule notes ahead of time for more accurate timing
-      while (lastScheduleTime < currentTime + scheduleAheadTime) {
-        const step = stepRef.current % pattern.length;
-        
-        // Play note if pattern has a 1 at current step
-        if (pattern[step] === 1) {
-          createNote(lastScheduleTime, frequencyRef.current);
-        }
-        
-        // Advance to next step and update schedule time
-        stepRef.current++;
-        lastScheduleTime += currentStepTime;
-      }
-      
-      // Schedule next loop call
-      intervalRef.current = window.setTimeout(loop, 25); // Check every 25ms
-    };
-    
-    // Start the loop
-    loop();
-  }, [createNote, pattern]);
+  }, [pattern]);
 
   // Stop the sequencer
-  const stopSequencer = useCallback(() => {
-    if (!isPlayingRef.current) return;
-    
+  const handleStopSequencer = useCallback(() => {
+    stopSequencer(isPlayingRef, intervalRef, cleanupAudio);
     setIsPlaying(false);
-    isPlayingRef.current = false;
-    
-    if (intervalRef.current) {
-      clearTimeout(intervalRef.current);
-      intervalRef.current = null;
-    }
-    
-    cleanupAudio();
   }, [cleanupAudio]);
 
   // Toggle sequencer
   const toggleSequencer = useCallback(() => {
     if (isPlayingRef.current) {
-      stopSequencer();
+      handleStopSequencer();
     } else {
-      startSequencer();
+      handleStartSequencer();
     }
-  }, [startSequencer, stopSequencer]);
+  }, [handleStartSequencer, handleStopSequencer]);
 
   // Update pattern
   const togglePatternStep = useCallback((index: number) => {
@@ -362,8 +232,8 @@ export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) =
     setPattern,
     togglePatternStep,
     isPlaying,
-    startSequencer,
-    stopSequencer,
+    startSequencer: handleStartSequencer,
+    stopSequencer: handleStopSequencer,
     toggleSequencer,
     filterCutoff,
     setFilterCutoff,
