@@ -1,11 +1,10 @@
-
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { SynthesizerParams, AudioNodes } from './synthesizer/types';
 import { createAudioContext, cleanupAudioNodes, updateFilterParams } from './synthesizer/audioUtils';
 import { startSequencer, stopSequencer } from './synthesizer/sequencer';
 import { createThrottleUpdate } from './synthesizer/parameterUtils';
 
-export { SynthesizerParams };
+export type { SynthesizerParams };
 
 export const useSynthesizer = (initialParams: Partial<SynthesizerParams> = {}) => {
   // Default parameters
